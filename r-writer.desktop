@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=R-Writer
+Comment=Pure Rust GUI Text Editor
+Exec=/usr/bin/r-writer
+Icon=r-writer
+Terminal=false
+Type=Application
+Categories=Office;WordProcessor;
