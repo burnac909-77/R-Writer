@@ -1,9 +1,10 @@
-use iced::widget::{button, column, row, text, text_editor, text_input, Container, Element, Space};
-use iced::{executor, Application, Command, Length, Settings, Theme};
+use iced::widget::{button, column, row, text, text_editor, Container, Space};
+use iced::{Element, Length, Task, Theme};
 use rfd::FileDialog;
 
 pub fn main() -> iced::Result {
-    RWriterApp::run(Settings::default())
+    iced::application("R-Writer (Pure Rust)", RWriterApp::update, RWriterApp::view)
+        .run()
 }
 
 struct RWriterApp {
@@ -17,37 +18,24 @@ enum Message {
     Edit(text_editor::Action),
     OpenClicked,
     SaveClicked,
-    FileLoaded(Option<String>, String),
-    FileSaved(Option<String>),
 }
 
-impl Application for RWriterApp {
-    type Executor = executor::Default;
-    type Message = Message;
-    type Theme = Theme;
-    type Flags = ();
-
-    fn new(_flags: ()) -> (Self, Command<Message>) {
-        (
-            Self {
-                content: text_editor::Content::new(),
-                file_path: None,
-                status_message: "Ready - Pure Rust Native Mode".into(),
-            },
-            Command::none(),
-        )
+impl Default for RWriterApp {
+    fn default() -> Self {
+        Self {
+            content: text_editor::Content::new(),
+            file_path: None,
+            status_message: "Ready - Pure Rust Native Mode".into(),
+        }
     }
+}
 
-    fn title(&self) -> String {
-        let name = self.file_path.clone().unwrap_or_else(|| "Untitled.txt".into());
-        format!("R-Writer (Pure Rust) - {}", name)
-    }
-
-    fn update(&mut self, message: Message) -> Command<Message> {
+impl RWriterApp {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Edit(action) => {
                 self.content.perform(action);
-                Command::none()
+                Task::none()
             }
             Message::OpenClicked => {
                 if let Some(path) = FileDialog::new().pick_file() {
@@ -57,7 +45,7 @@ impl Application for RWriterApp {
                         self.status_message = format!("Loaded {}", path.to_string_lossy());
                     }
                 }
-                Command::none()
+                Task::none()
             }
             Message::SaveClicked => {
                 if let Some(path) = &self.file_path {
@@ -73,10 +61,8 @@ impl Application for RWriterApp {
                         self.status_message = format!("Saved to {}", path_str);
                     }
                 }
-                Command::none()
+                Task::none()
             }
-            Message::FileLoaded(_, _) => Command::none(),
-            Message::FileSaved(_) => Command::none(),
         }
     }
 
@@ -93,7 +79,7 @@ impl Application for RWriterApp {
             .padding(20);
 
         let status = text(&self.status_message).size(14);
-            let status_bar = Container::new(status).padding(8);
+        let status_bar = Container::new(status).padding(8);
 
         let layout = column![toolbar, editor, status_bar]
             .spacing(5)
