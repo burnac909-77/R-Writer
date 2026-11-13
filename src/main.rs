@@ -202,7 +202,10 @@ impl RWriterApp {
                     width: 0.0,
                     radius: 0.0.into(),
                 },
-                ..Default::default()
+                icon: Color::TRANSPARENT,
+                placeholder: Color::from_rgb8(150, 150, 150),
+                value: Color::from_rgb8(17, 17, 17),
+                selection: Color::from_rgb8(180, 200, 255),
             }
         };
 
