@@ -1,25 +1,15 @@
 [package]
 name = "r-writer-pure"
-version = "1.0.0"
+version = "0.1.0"
 edition = "2021"
-license = "MIT"
-description = "A pure Rust text editor built with Iced"
 
 [dependencies]
-iced = { version = "0.13", features = ["advanced", "tokio"] }
-rfd = "0.15"
+iced = "0.13"
+dirs = "5.0"
 
 [package.metadata.deb]
-maintainer = "Your Name <your.email@example.com>"
-copyright = "2026, Your Name"
-extended-description = """
-A 100% pure Rust desktop text editor application built using the Iced framework.
-"""
 assets = [
-    # 1. Copies the compiled binary into the system path
     ["target/release/r-writer-pure", "usr/bin/r-writer-pure", "755"],
-    # 2. Copies your desktop shortcut entry so it appears in the app menu
     ["r-writer-pure.desktop", "usr/share/applications/r-writer-pure.desktop", "644"],
-    # 3. Copies your transparent logo icon into system pixmaps
-    ["icon.png", "usr/share/pixmaps/r-writer-pure.png", "644"],
+    ["icon.png", "usr/share/icons/hicolor/256x256/apps/r-writer-pure.png", "644"]
 ]
