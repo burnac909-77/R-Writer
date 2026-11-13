@@ -178,7 +178,6 @@ impl RWriterApp {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        // Defined as a helper function instead of a closure to avoid lifetime bounds issues
         fn red_button_style(_theme: &Theme, status: button::Status) -> button::Style {
             let bg = match status {
                 button::Status::Hovered => Color::from_rgb8(210, 50, 50),
@@ -210,7 +209,7 @@ impl RWriterApp {
             }
         };
 
-        // 1. TOP TOOLBAR BAR
+        // 1. TOP TOOLBAR
         let toolbar = row![
             button("Open...").on_press(Message::OpenClicked).style(red_button_style),
             button("Save").on_press(Message::SaveClicked).style(red_button_style),
@@ -259,52 +258,71 @@ impl RWriterApp {
                 ..Default::default()
             });
 
-        // 2. DOCUMENT SHEET (Borderless, blank white page layout)
-        let mut doc_col = Column::new().spacing(4);
-        for (i, p) in self.paragraphs.iter().enumerate() {
-            let input = text_input("", &p.content)
-                .on_input(move |txt| Message::ParagraphInput(i, txt))
-                .on_submit(Message::InsertParagraph(i))
-                .size(p.font_size)
-                .style(blank_input_style);
-            doc_col = doc_col.push(input);
+        // 2. MULTI-PAGE BREAK WORKSPACE CONTAINER
+        // Group paragraphs into chunks of ~12 paragraphs per physical 650x800px page
+        const PARAGRAPHS_PER_PAGE: usize = 12;
+        let mut workspace_col = Column::new().spacing(25).align_x(Alignment::Center);
+        let total_pages = std::cmp::max(1, (self.paragraphs.len() + PARAGRAPHS_PER_PAGE - 1) / PARAGRAPHS_PER_PAGE);
+
+        for page_idx in 0..total_pages {
+            let start = page_idx * PARAGRAPHS_PER_PAGE;
+            let end = std::cmp::min(start + PARAGRAPHS_PER_PAGE, self.paragraphs.len());
+            
+            let mut page_col = Column::new().spacing(4);
+            for i in start..end {
+                if let Some(p) = self.paragraphs.get(i) {
+                    let input = text_input("", &p.content)
+                        .on_input(move |txt| Message::ParagraphInput(i, txt))
+                        .on_submit(Message::InsertParagraph(i))
+                        .size(p.font_size)
+                        .style(blank_input_style);
+                    page_col = page_col.push(input);
+                }
+            }
+
+            let sheet_inner = container(page_col)
+                .padding(iced::Padding {
+                    top: 40.0,
+                    right: 40.0,
+                    bottom: 64.0, // Optimized bottom padding for text bounds
+                    left: 40.0,
+                })
+                .width(Length::Fixed(650.0));
+
+            let editor_sheet = container(sheet_inner)
+                .width(Length::Fixed(650.0))
+                .height(Length::Fixed(800.0))
+                .style(|_| container::Style {
+                    background: Some(Background::Color(Color::WHITE)),
+                    border: iced::Border {
+                        radius: 2.0.into(),
+                        color: Color::from_rgb8(200, 200, 200),
+                        width: 1.0,
+                    },
+                    ..Default::default()
+                });
+
+            workspace_col = workspace_col.push(editor_sheet);
         }
-        
-        let sheet_inner = container(doc_col)
-            .padding(40)
-            .width(Length::Fixed(650.0));
 
-        let editor_sheet = container(scrollable(sheet_inner))
-            .width(Length::Fixed(650.0))
-            .height(Length::Fixed(800.0))
-            .style(|_| container::Style {
-                background: Some(Background::Color(Color::WHITE)),
-                border: iced::Border {
-                    radius: 2.0.into(),
-                    color: Color::from_rgb8(200, 200, 200),
-                    width: 1.0,
-                },
-                ..Default::default()
-            });
-
-        let canvas_area = container(editor_sheet)
+        let canvas_area = container(scrollable(workspace_col))
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x(Length::Fill)
-            .center_y(Length::Fill)
             .style(|_| container::Style {
                 background: Some(Background::Color(Color::from_rgb8(106, 106, 106))),
                 ..Default::default()
             });
 
-        // 3. STATUS BAR AT THE BOTTOM
+        // 3. STATUS BAR (Characters, Words, Dynamic Page X of Y)
+        let total_chars: usize = self.paragraphs.iter().map(|p| p.content.chars().count()).sum();
         let total_words: usize = self.paragraphs.iter()
             .map(|p| p.content.split_whitespace().count())
             .sum();
 
         let status_bar = container(text(format!(
-            "Page 1 of 1 · {} words · Ready",
-            total_words
+            "Page 1 of {} · {} characters · {} words · Ready",
+            total_pages, total_chars, total_words
         )))
         .padding(8)
         .width(Length::Fill)
