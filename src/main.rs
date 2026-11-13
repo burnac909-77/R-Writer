@@ -1,4 +1,4 @@
-use iced::widget::{button, column, container, pick_list, row, text, text_input, Space, scroll, stack};
+use iced::widget::{button, column, container, pick_list, row, text, text_input, Space, scrollable, stack, Column};
 use iced::{Alignment, Background, Color, Element, Length, Theme};
 
 pub fn main() -> iced::Result {
@@ -17,7 +17,7 @@ enum Message {
     FontChanged(FontChoice),
     SizeChanged(String),
     ParagraphInput(usize, String),
-    NewParagraph,
+    InsertParagraph(usize),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -164,12 +164,15 @@ impl RWriterApp {
                     p.content = text;
                 }
             }
-            Message::NewParagraph => {
-                self.paragraphs.push(ParagraphBlock {
-                    content: String::new(),
-                    font_size: self.current_size,
-                    font_choice: self.current_font,
-                });
+            Message::InsertParagraph(idx) => {
+                self.paragraphs.insert(
+                    idx + 1,
+                    ParagraphBlock {
+                        content: String::new(),
+                        font_size: self.current_size,
+                        font_choice: self.current_font,
+                    },
+                );
             }
         }
     }
@@ -186,6 +189,18 @@ impl RWriterApp {
                 border: iced::Border {
                     radius: 6.0.into(),
                     ..Default::default()
+                },
+                ..Default::default()
+            }
+        };
+
+        let blank_input_style = |_theme: &Theme, _status: text_input::Status| {
+            text_input::Style {
+                background: Background::Color(Color::TRANSPARENT),
+                border: iced::Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 0.0.into(),
                 },
                 ..Default::default()
             }
@@ -240,24 +255,22 @@ impl RWriterApp {
                 ..Default::default()
             });
 
-        // 2. DOCUMENT SHEET
-        let mut doc_col = column::new().spacing(8);
+        // 2. DOCUMENT SHEET (Borderless, blank white page layout)
+        let mut doc_col = Column::new().spacing(4);
         for (i, p) in self.paragraphs.iter().enumerate() {
-            let input = text_input("Type text...", &p.content)
+            let input = text_input("", &p.content)
                 .on_input(move |txt| Message::ParagraphInput(i, txt))
-                .size(p.font_size);
+                .on_submit(Message::InsertParagraph(i))
+                .size(p.font_size)
+                .style(blank_input_style);
             doc_col = doc_col.push(input);
         }
-
-        let add_line_btn = button("+ New Paragraph / Line")
-            .on_press(Message::NewParagraph)
-            .style(red_button_style);
         
-        let sheet_inner = column![doc_col, Space::with_height(Length::Fixed(15.0)), add_line_btn]
+        let sheet_inner = container(doc_col)
             .padding(40)
             .width(Length::Fixed(650.0));
 
-        let editor_sheet = container(scroll(sheet_inner))
+        let editor_sheet = container(scrollable(sheet_inner))
             .width(Length::Fixed(650.0))
             .height(Length::Fixed(800.0))
             .style(|_| container::Style {
