@@ -2,17 +2,16 @@
 name = "r-writer"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"  # <-- It belongs here under [package]
 
 [dependencies]
 iced = "0.13"
 dirs = "5.0"
-image = "0.25" # Required for loading PNG icons into Iced window settings on Linux
+image = "0.25"
 
 [package.metadata.deb]
-name = "r-writer"
 maintainer = "Developer <dev@example.com>"
 copyright = "2026 Developer"
-license = "MIT"
 assets = [
     ["target/release/r-writer", "/usr/bin/r-writer", "755"],
     ["icon.png", "/usr/share/icons/hicolor/256x256/apps/r-writer.png", "644"],
