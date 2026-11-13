@@ -1,8 +1,19 @@
 use iced::widget::{button, column, container, pick_list, row, text, text_input, text_editor, Space, scrollable, stack, Column};
-use iced::{Alignment, Background, Color, Element, Length, Theme};
+use iced::{Alignment, Background, Color, Element, Length, Theme, window};
 
 pub fn main() -> iced::Result {
-    iced::run("R-Writer", RWriterApp::update, RWriterApp::view)
+    // Load custom app logo icon for Linux window & taskbar at runtime
+    let icon = window::icon::from_file_data(
+        include_bytes!("../icon.png"),
+        Some(image::ImageFormat::Png),
+    ).ok();
+
+    iced::application("R-Writer", RWriterApp::update, RWriterApp::view)
+        .window(window::Settings {
+            icon,
+            ..Default::default()
+        })
+        .run()
 }
 
 #[derive(Debug, Clone)]
@@ -92,7 +103,7 @@ struct RWriterApp {
 impl Default for RWriterApp {
     fn default() -> Self {
         Self {
-            pages: vec![text_editor::Content::new()], // Starts with 1 empty page
+            pages: vec![text_editor::Content::new()], // Starts completely empty with no placeholder text
             file_name: String::from("document"),
             page_size: PageSize::A4,
             current_font: FontChoice::UbuntuLight,
@@ -149,6 +160,7 @@ impl RWriterApp {
                 }
             }
             Message::PageAction(idx, action) => {
+                // Enter creates a new line on the active page instead of spawning a new physical page
                 if let Some(content) = self.pages.get_mut(idx) {
                     content.perform(action);
                 }
@@ -252,7 +264,7 @@ impl RWriterApp {
                     top: 40.0,
                     right: 40.0,
                     bottom: 64.0,
-                    left: 10.0, // 1-character left margin
+                    left: 10.0, // 1-character left margin spacing
                 })
                 .width(Length::Fixed(650.0))
                 .height(Length::Fixed(800.0));
@@ -273,7 +285,14 @@ impl RWriterApp {
             workspace_col = workspace_col.push(editor_sheet);
         }
 
-        let canvas_area = container(scrollable(workspace_col))
+        // Clean gap under the toolbar before the first page
+        let padded_workspace = column![
+            Space::with_height(Length::Fixed(20.0)),
+            workspace_col,
+            Space::with_height(Length::Fixed(30.0)),
+        ].align_x(Alignment::Center);
+
+        let canvas_area = container(scrollable(padded_workspace))
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x(Length::Fill)
