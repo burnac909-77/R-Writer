@@ -1,0 +1,8 @@
+[package]
+name = "r-writer-pure"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+iced = { version = "0.13", features = ["advanced", "tokio"] }
+rfd = "0.15"
