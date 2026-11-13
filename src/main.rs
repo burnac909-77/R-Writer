@@ -1,5 +1,5 @@
 use iced::widget::{button, column, row, text, text_editor, Container, Space};
-use iced::{Element, Length, Task, Theme};
+use iced::{Element, Length, Task};
 use rfd::FileDialog;
 
 pub fn main() -> iced::Result {
@@ -41,7 +41,7 @@ impl RWriterApp {
                 if let Some(path) = FileDialog::new().pick_file() {
                     if let Ok(contents) = std::fs::read_to_string(&path) {
                         self.file_path = Some(path.to_string_lossy().to_string());
-                        self.content = text_editor::Content::with(&contents);
+                        self.content = text_editor::Content::with_text(&contents);
                         self.status_message = format!("Loaded {}", path.to_string_lossy());
                     }
                 }
