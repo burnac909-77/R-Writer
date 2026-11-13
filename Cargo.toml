@@ -2,7 +2,19 @@
 name = "r-writer-pure"
 version = "1.0.0"
 edition = "2021"
+license = "MIT"
+description = "A pure Rust text editor built with Iced"
 
 [dependencies]
 iced = { version = "0.13", features = ["advanced", "tokio"] }
 rfd = "0.15"
+
+[package.metadata.deb]
+maintainer = "Your Name <your.email@example.com>"
+copyright = "2026, Your Name"
+extended-description = """
+A 100% pure Rust desktop text editor application built using the Iced framework.
+"""
+assets = [
+    ["target/release/r-writer-pure", "usr/bin/", "755"],
+]
