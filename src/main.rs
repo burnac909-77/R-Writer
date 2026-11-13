@@ -92,7 +92,7 @@ struct RWriterApp {
 impl Default for RWriterApp {
     fn default() -> Self {
         Self {
-            pages: vec![text_editor::Content::new()],
+            pages: vec![text_editor::Content::new()], // Starts with 1 empty page
             file_name: String::from("document"),
             page_size: PageSize::A4,
             current_font: FontChoice::UbuntuLight,
@@ -149,12 +149,9 @@ impl RWriterApp {
                 }
             }
             Message::PageAction(idx, action) => {
+                // Perform the action (like typing or pressing Enter) directly on the target page
                 if let Some(content) = self.pages.get_mut(idx) {
-                    if let text_editor::Action::Edit(text_editor::Edit::Enter) = action {
-                        self.pages.insert(idx + 1, text_editor::Content::new());
-                    } else {
-                        content.perform(action);
-                    }
+                    content.perform(action);
                 }
             }
         }
@@ -255,7 +252,7 @@ impl RWriterApp {
                     top: 40.0,
                     right: 40.0,
                     bottom: 64.0,
-                    left: 10.0, // Set to ~1 character width distance from left edge
+                    left: 10.0, // 1-character left margin
                 })
                 .width(Length::Fixed(650.0))
                 .height(Length::Fixed(800.0));
