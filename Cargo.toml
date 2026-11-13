@@ -16,5 +16,10 @@ extended-description = """
 A 100% pure Rust desktop text editor application built using the Iced framework.
 """
 assets = [
-    ["target/release/r-writer-pure", "usr/bin/", "755"],
+    # 1. Copies the compiled binary into the system path
+    ["target/release/r-writer-pure", "usr/bin/r-writer-pure", "755"],
+    # 2. Registers the application menu shortcut
+    ["r-writer-pure.desktop", "usr/share/applications/r-writer-pure.desktop", "644"],
+    # 3. Installs your transparent logo icon for the app menu and window
+    ["icon.png", "usr/share/pixmaps/r-writer-pure.png", "644"],
 ]
