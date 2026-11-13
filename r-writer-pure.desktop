@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=R-Writer
+Exec=r-writer-pure
+Icon=r-writer-pure
+Type=Application
+Categories=Utility;TextEditor;
+Terminal=false
