@@ -1,15 +1,20 @@
 [package]
-name = "r-writer-pure"
+name = "r-writer"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 iced = "0.13"
 dirs = "5.0"
+image = "0.25" # Required for loading PNG icons into Iced window settings on Linux
 
 [package.metadata.deb]
+name = "r-writer"
+maintainer = "Developer <dev@example.com>"
+copyright = "2026 Developer"
+license = "MIT"
 assets = [
-    ["target/release/r-writer-pure", "usr/bin/r-writer-pure", "755"],
-    ["r-writer-pure.desktop", "usr/share/applications/r-writer-pure.desktop", "644"],
-    ["icon.png", "usr/share/icons/hicolor/256x256/apps/r-writer-pure.png", "644"]
+    ["target/release/r-writer", "/usr/bin/r-writer", "755"],
+    ["icon.png", "/usr/share/icons/hicolor/256x256/apps/r-writer.png", "644"],
+    ["r-writer.desktop", "/usr/share/applications/r-writer.desktop", "644"],
 ]
