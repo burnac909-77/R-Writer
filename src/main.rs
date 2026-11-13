@@ -1,4 +1,4 @@
-use iced::widget::{button, column, container, pick_list, row, text, text_input, Space, scrollable, stack, Column};
+use iced::widget::{button, column, container, pick_list, row, text, text_input, text_editor, Space, scrollable, stack, Column};
 use iced::{Alignment, Background, Color, Element, Length, Theme};
 
 pub fn main() -> iced::Result {
@@ -16,8 +16,7 @@ enum Message {
     PageSizeChanged(PageSize),
     FontChanged(FontChoice),
     SizeChanged(String),
-    ParagraphInput(usize, String),
-    InsertParagraph(usize),
+    PageAction(usize, text_editor::Action),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -79,14 +78,8 @@ impl std::fmt::Display for FontChoice {
     }
 }
 
-struct ParagraphBlock {
-    content: String,
-    font_size: u16,
-    font_choice: FontChoice,
-}
-
 struct RWriterApp {
-    paragraphs: Vec<ParagraphBlock>,
+    pages: Vec<text_editor::Content>,
     file_name: String,
     page_size: PageSize,
     current_font: FontChoice,
@@ -99,11 +92,7 @@ struct RWriterApp {
 impl Default for RWriterApp {
     fn default() -> Self {
         Self {
-            paragraphs: vec![ParagraphBlock {
-                content: String::from("Start typing your document here..."),
-                font_size: 14,
-                font_choice: FontChoice::UbuntuLight,
-            }],
+            pages: vec![text_editor::Content::new()],
             file_name: String::from("document"),
             page_size: PageSize::A4,
             current_font: FontChoice::UbuntuLight,
@@ -135,9 +124,9 @@ impl RWriterApp {
                     let file_name = format!("{}.{}", self.file_name.trim(), extension);
                     let full_path = doc_dir.join(file_name);
 
-                    let full_text: String = self.paragraphs
+                    let full_text: String = self.pages
                         .iter()
-                        .map(|p| p.content.clone())
+                        .map(|p| p.text())
                         .collect::<Vec<String>>()
                         .join("\n");
 
@@ -159,20 +148,14 @@ impl RWriterApp {
                     self.current_size = parsed.clamp(8, 48);
                 }
             }
-            Message::ParagraphInput(idx, text) => {
-                if let Some(p) = self.paragraphs.get_mut(idx) {
-                    p.content = text;
+            Message::PageAction(idx, action) => {
+                if let Some(content) = self.pages.get_mut(idx) {
+                    if let text_editor::Action::Edit(text_editor::Edit::Enter) = action {
+                        self.pages.insert(idx + 1, text_editor::Content::new());
+                    } else {
+                        content.perform(action);
+                    }
                 }
-            }
-            Message::InsertParagraph(idx) => {
-                self.paragraphs.insert(
-                    idx + 1,
-                    ParagraphBlock {
-                        content: String::new(),
-                        font_size: self.current_size,
-                        font_choice: self.current_font,
-                    },
-                );
             }
         }
     }
@@ -194,15 +177,14 @@ impl RWriterApp {
             }
         }
 
-        let blank_input_style = |_theme: &Theme, _status: text_input::Status| {
-            text_input::Style {
+        let blank_editor_style = |_theme: &Theme, _status: text_editor::Status| {
+            text_editor::Style {
                 background: Background::Color(Color::TRANSPARENT),
                 border: iced::Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
                     radius: 0.0.into(),
                 },
-                icon: Color::TRANSPARENT,
                 placeholder: Color::from_rgb8(150, 150, 150),
                 value: Color::from_rgb8(17, 17, 17),
                 selection: Color::from_rgb8(180, 200, 255),
@@ -258,36 +240,25 @@ impl RWriterApp {
                 ..Default::default()
             });
 
-        // 2. MULTI-PAGE BREAK WORKSPACE CONTAINER
-        // Group paragraphs into chunks of ~12 paragraphs per physical 650x800px page
-        const PARAGRAPHS_PER_PAGE: usize = 12;
+        // 2. MULTI-PAGE WORKSPACE CONTAINER
         let mut workspace_col = Column::new().spacing(25).align_x(Alignment::Center);
-        let total_pages = std::cmp::max(1, (self.paragraphs.len() + PARAGRAPHS_PER_PAGE - 1) / PARAGRAPHS_PER_PAGE);
+        let total_pages = self.pages.len();
 
-        for page_idx in 0..total_pages {
-            let start = page_idx * PARAGRAPHS_PER_PAGE;
-            let end = std::cmp::min(start + PARAGRAPHS_PER_PAGE, self.paragraphs.len());
-            
-            let mut page_col = Column::new().spacing(4);
-            for i in start..end {
-                if let Some(p) = self.paragraphs.get(i) {
-                    let input = text_input("", &p.content)
-                        .on_input(move |txt| Message::ParagraphInput(i, txt))
-                        .on_submit(Message::InsertParagraph(i))
-                        .size(p.font_size)
-                        .style(blank_input_style);
-                    page_col = page_col.push(input);
-                }
-            }
+        for (i, page_content) in self.pages.iter().enumerate() {
+            let editor = text_editor(page_content)
+                .on_action(move |action| Message::PageAction(i, action))
+                .size(self.current_size)
+                .style(blank_editor_style);
 
-            let sheet_inner = container(page_col)
+            let sheet_inner = container(editor)
                 .padding(iced::Padding {
                     top: 40.0,
                     right: 40.0,
-                    bottom: 64.0, // Optimized bottom padding for text bounds
-                    left: 40.0,
+                    bottom: 64.0,
+                    left: 10.0, // Set to ~1 character width distance from left edge
                 })
-                .width(Length::Fixed(650.0));
+                .width(Length::Fixed(650.0))
+                .height(Length::Fixed(800.0));
 
             let editor_sheet = container(sheet_inner)
                 .width(Length::Fixed(650.0))
@@ -314,11 +285,10 @@ impl RWriterApp {
                 ..Default::default()
             });
 
-        // 3. STATUS BAR (Characters, Words, Dynamic Page X of Y)
-        let total_chars: usize = self.paragraphs.iter().map(|p| p.content.chars().count()).sum();
-        let total_words: usize = self.paragraphs.iter()
-            .map(|p| p.content.split_whitespace().count())
-            .sum();
+        // 3. STATUS BAR
+        let full_doc_text: String = self.pages.iter().map(|p| p.text()).collect::<Vec<String>>().join("\n");
+        let total_chars = full_doc_text.chars().count();
+        let total_words = full_doc_text.split_whitespace().count();
 
         let status_bar = container(text(format!(
             "Page 1 of {} · {} characters · {} words · Ready",
