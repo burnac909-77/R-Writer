@@ -178,7 +178,8 @@ impl RWriterApp {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let red_button_style = |_, status: button::Status| {
+        // Defined as a helper function instead of a closure to avoid lifetime bounds issues
+        fn red_button_style(_theme: &Theme, status: button::Status) -> button::Style {
             let bg = match status {
                 button::Status::Hovered => Color::from_rgb8(210, 50, 50),
                 _ => Color::from_rgb8(180, 40, 40),
@@ -192,7 +193,7 @@ impl RWriterApp {
                 },
                 ..Default::default()
             }
-        };
+        }
 
         let blank_input_style = |_theme: &Theme, _status: text_input::Status| {
             text_input::Style {
