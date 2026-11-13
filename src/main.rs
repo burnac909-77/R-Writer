@@ -1,8 +1,8 @@
 use iced::widget::{button, column, container, pick_list, row, text, text_input, Space};
-use iced::{Alignment, Background, Color, Element, Length, Sandbox, Settings, Theme};
+use iced::{Alignment, Background, Color, Element, Length, Theme};
 
 pub fn main() -> iced::Result {
-    RWriterApp::run(Settings::default())
+    iced::run("R-Writer", RWriterApp::update, RWriterApp::view)
 }
 
 #[derive(Debug, Clone)]
@@ -64,10 +64,8 @@ struct RWriterApp {
     font_size: String,
 }
 
-impl Sandbox for RWriterApp {
-    type Message = Message;
-
-    fn new() -> Self {
+impl Default for RWriterApp {
+    fn default() -> Self {
         Self {
             content: String::from("Start typing your document here..."),
             file_name: String::from("document"),
@@ -76,11 +74,9 @@ impl Sandbox for RWriterApp {
             font_size: String::from("14"),
         }
     }
+}
 
-    fn title(&self) -> String {
-        format!("{} - R-Writer", self.file_name)
-    }
-
+impl RWriterApp {
     fn update(&mut self, message: Message) {
         match message {
             Message::FileOpened => {}
