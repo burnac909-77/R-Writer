@@ -1,4 +1,4 @@
-use iced::widget::{button, column, container, pick_list, row, text, text_input, Space, Scroll, Stack};
+use iced::widget::{button, column, container, pick_list, row, text, text_input, Space, scroll, stack};
 use iced::{Alignment, Background, Color, Element, Length, Theme};
 
 pub fn main() -> iced::Result {
@@ -126,7 +126,6 @@ impl RWriterApp {
                 self.show_save_dialog = false;
             }
             Message::ConfirmSave => {
-                // Save directly to the user's PC Documents folder
                 if let Some(doc_dir) = dirs::document_dir() {
                     let extension = match self.save_format {
                         SaveFormat::Docx => "docx",
@@ -241,8 +240,8 @@ impl RWriterApp {
                 ..Default::default()
             });
 
-        // 2. DOCUMENT SHEET (Scoped font size per paragraph block)
-        let mut doc_col = column().spacing(8);
+        // 2. DOCUMENT SHEET
+        let mut doc_col = column::new().spacing(8);
         for (i, p) in self.paragraphs.iter().enumerate() {
             let input = text_input("Type text...", &p.content)
                 .on_input(move |txt| Message::ParagraphInput(i, txt))
@@ -258,7 +257,7 @@ impl RWriterApp {
             .padding(40)
             .width(Length::Fixed(650.0));
 
-        let editor_sheet = container(Scroll::new(sheet_inner))
+        let editor_sheet = container(scroll(sheet_inner))
             .width(Length::Fixed(650.0))
             .height(Length::Fixed(800.0))
             .style(|_| container::Style {
@@ -348,7 +347,7 @@ impl RWriterApp {
                     ..Default::default()
                 });
 
-            Stack::new().push(main_app).push(modal_overlay).into()
+            stack![main_app, modal_overlay].into()
         } else {
             main_app.into()
         }
