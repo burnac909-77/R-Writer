@@ -18,8 +18,8 @@ A 100% pure Rust desktop text editor application built using the Iced framework.
 assets = [
     # 1. Copies the compiled binary into the system path
     ["target/release/r-writer-pure", "usr/bin/r-writer-pure", "755"],
-    # 2. Registers the application menu shortcut
+    # 2. Copies your desktop shortcut entry so it appears in the app menu
     ["r-writer-pure.desktop", "usr/share/applications/r-writer-pure.desktop", "644"],
-    # 3. Installs your transparent logo icon for the app menu and window
+    # 3. Copies your transparent logo icon into system pixmaps
     ["icon.png", "usr/share/pixmaps/r-writer-pure.png", "644"],
 ]
